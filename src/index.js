@@ -12,12 +12,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors({ origin: '*' }));
-app.use(express.json());
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://projects771.github.io'
+  ]
+}));
 
 app.use('/api/courses', courseRoutes);
 app.use('/api/concepts', conceptRoutes);
