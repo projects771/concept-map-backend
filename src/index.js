@@ -20,6 +20,7 @@ app.use(cors({
   ]
 }));
 
+app.use(express.json());
 app.use('/api/courses', courseRoutes);
 app.use('/api/concepts', conceptRoutes);
 app.use('/api/mastery', masteryRoutes);
