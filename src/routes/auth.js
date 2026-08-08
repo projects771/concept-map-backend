@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { getSession } from '../db/neo4j.js';
 import { authenticate } from '../middleware/auth.js';
 import crypto from 'crypto';
+import axios from 'axios';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'waypoint_super_secret_jwt_key_2026';
@@ -92,10 +93,65 @@ router.get('/me', authenticate, async (req, res) => {
 });
 
 router.post('/google', async (req, res) => {
-  // Scaffolded for Google OAuth
-  // const { googleToken } = req.body;
-  // TODO: Verify googleToken with google-auth-library using Client ID
-  res.status(501).json({ error: 'Google OAuth not yet implemented' });
+  const session = getSession();
+  try {
+    const { accessToken, role } = req.body;
+
+    if (!accessToken || !role) {
+      return res.status(400).json({ error: 'accessToken and role are required' });
+    }
+
+    // Verify token with Google and get user profile
+    const googleRes = await axios.get(
+      'https://www.googleapis.com/oauth2/v3/userinfo',
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+
+    const { email, name, sub: googleId } = googleRes.data;
+
+    // Check if user already exists in Neo4j
+    const existingUser = await session.run(
+      'MATCH (u:User {email: $email}) RETURN u',
+      { email }
+    );
+
+    let user;
+
+    if (existingUser.records.length > 0) {
+      // User exists — log them in
+      user = existingUser.records[0].get('u').properties;
+    } else {
+      // New user — create account
+      const id = crypto.randomUUID();
+      await session.run(
+        `CREATE (u:User {
+          id: $id,
+          name: $name,
+          email: $email,
+          googleId: $googleId,
+          role: $role,
+          createdAt: $createdAt
+        })`,
+        { id, name, email, googleId, role, createdAt: new Date().toISOString() }
+      );
+      user = { id, name, email, role };
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+
+  } catch (err) {
+    console.error('Google auth error:', err.message);
+    res.status(500).json({ error: 'Google authentication failed' });
+  } finally {
+    await session.close();
+  }
 });
 
 export default router;
