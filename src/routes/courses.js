@@ -13,12 +13,25 @@ router.get('/', async (req, res) => {
   try {
     let query = '';
     if (req.user.role === 'educator') {
-      query = `MATCH (c:Course {educatorId: $userId}) RETURN c ORDER BY c.createdAt DESC`;
+      query = `
+        MATCH (c:Course {educatorId: $userId})
+        OPTIONAL MATCH (s:User)-[:ENROLLED_IN]->(c)
+        RETURN c, count(s) as studentCount
+        ORDER BY c.createdAt DESC
+      `;
     } else {
-      query = `MATCH (u:User {id: $userId})-[:ENROLLED_IN]->(c:Course) RETURN c ORDER BY c.createdAt DESC`;
+      query = `
+        MATCH (u:User {id: $userId})-[:ENROLLED_IN]->(c:Course)
+        RETURN c, 0 as studentCount
+        ORDER BY c.createdAt DESC
+      `;
     }
     const result = await session.run(query, { userId: req.user.id });
-    const courses = result.records.map(r => r.get('c').properties);
+    const courses = result.records.map(r => {
+      const course = r.get('c').properties;
+      course.studentCount = r.get('studentCount').toNumber();
+      return course;
+    });
     res.json({ courses });
   } catch (err) {
     res.status(500).json({ error: err.message });
