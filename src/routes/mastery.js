@@ -1,15 +1,18 @@
 import { Router } from 'express';
 import { getSession } from '../db/neo4j.js';
 import { requireFields, validateMasteryStatus } from '../middleware/validation.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
+router.use(authenticate);
 
 // PATCH /api/mastery/:conceptId
-router.patch('/:conceptId', requireFields('studentId', 'status'), validateMasteryStatus, async (req, res) => {
+router.patch('/:conceptId', requireFields('status'), validateMasteryStatus, async (req, res) => {
   const session = getSession();
   try {
     const { conceptId } = req.params;
-    const { studentId, status } = req.body;
+    const { status } = req.body;
+    const studentId = req.user.id;
 
     await session.run(
       `MERGE (s:Student {id: $studentId})
@@ -27,11 +30,11 @@ router.patch('/:conceptId', requireFields('studentId', 'status'), validateMaster
   }
 });
 
-// GET /api/mastery/:studentId
-router.get('/:studentId', async (req, res) => {
+// GET /api/mastery
+router.get('/', async (req, res) => {
   const session = getSession();
   try {
-    const { studentId } = req.params;
+    const studentId = req.user.id;
 
     const result = await session.run(
       `MATCH (s:Student {id: $studentId})-[m:HAS_MASTERY]->(c:Concept)

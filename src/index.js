@@ -7,6 +7,7 @@ import masteryRoutes from './routes/mastery.js';
 import gapRoutes from './routes/gaps.js';
 import courseRoutes from './routes/courses.js';
 import analyticsRoutes from './routes/analytics.js';
+import authRoutes from './routes/auth.js';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use(express.json()); // ← MUST be before all routes
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/concepts', conceptRoutes);
 app.use('/api/mastery', masteryRoutes);

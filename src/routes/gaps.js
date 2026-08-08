@@ -1,14 +1,16 @@
 import { Router } from 'express';
 import { getSession } from '../db/neo4j.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
+router.use(authenticate);
 
-// GET /api/gaps/:conceptId?studentId=student1
+// GET /api/gaps/:conceptId
 router.get('/:conceptId', async (req, res) => {
   const session = getSession();
   try {
     const { conceptId } = req.params;
-    const { studentId } = req.query;
+    const studentId = req.user.id;
 
     // Get all downstream concepts
     const downstreamResult = await session.run(

@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { getSession } from '../db/neo4j.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
+router.use(authenticate);
 
 router.get('/:courseId', async (req, res) => {
   const session = getSession();

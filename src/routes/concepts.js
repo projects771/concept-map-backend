@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { getSession } from '../db/neo4j.js';
 import { requireFields } from '../middleware/validation.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
+router.use(authenticate);
 
 // GET /api/concepts?courseId=demo
 router.get('/', async (req, res) => {
