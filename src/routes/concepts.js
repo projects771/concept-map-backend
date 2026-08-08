@@ -103,4 +103,39 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// PATCH /api/concepts/:id
+router.patch('/:id', async (req, res) => {
+  const session = getSession();
+  try {
+    const { x, y, title, description } = req.body;
+    await session.run(
+      `MATCH (c:Concept {id: $id})
+       SET c.x = $x, c.y = $y, c.title = $title, c.description = $description`,
+      { id: req.params.id, x, y, title, description }
+    );
+    res.json({ id: req.params.id, x, y, title, description });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
+  }
+});
+
+// PATCH /api/concepts/:id/resources
+router.patch('/:id/resources', async (req, res) => {
+  const session = getSession();
+  try {
+    const { resources } = req.body; // [{ title, url }]
+    await session.run(
+      'MATCH (c:Concept {id: $id}) SET c.resources = $resources',
+      { id: req.params.id, resources: JSON.stringify(resources) }
+    );
+    res.json({ id: req.params.id, resources });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
+  }
+});
+
 export default router;

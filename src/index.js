@@ -6,6 +6,7 @@ import conceptRoutes from './routes/concepts.js';
 import masteryRoutes from './routes/mastery.js';
 import gapRoutes from './routes/gaps.js';
 import courseRoutes from './routes/courses.js';
+import analyticsRoutes from './routes/analytics.js';
 
 dotenv.config();
 
@@ -20,11 +21,15 @@ app.use(cors({
   ]
 }));
 
-app.use(express.json());
+app.use(express.json()); // ← MUST be before all routes
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 app.use('/api/courses', courseRoutes);
 app.use('/api/concepts', conceptRoutes);
 app.use('/api/mastery', masteryRoutes);
 app.use('/api/gaps', gapRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
