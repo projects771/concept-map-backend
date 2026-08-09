@@ -89,6 +89,24 @@ router.post('/edge', requireFields('fromId', 'toId', 'courseId'), async (req, re
   }
 });
 
+// DELETE /api/concepts/edge
+router.delete('/edge', requireFields('fromId', 'toId'), async (req, res) => {
+  const session = getSession();
+  try {
+    const { fromId, toId } = req.body;
+    await session.run(
+      `MATCH (a:Concept {id: $fromId})-[r:REQUIRES]->(b:Concept {id: $toId})
+       DELETE r`,
+      { fromId, toId }
+    );
+    res.json({ deleted: true, from: fromId, to: toId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    await session.close();
+  }
+});
+
 // DELETE /api/concepts/:id
 router.delete('/:id', async (req, res) => {
   const session = getSession();
