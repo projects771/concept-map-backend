@@ -1,0 +1,21 @@
+name: Keep Alive
+
+on:
+  schedule:
+    # Runs every 24 hours at 12:00 UTC
+    - cron: '0 12 * * *'
+  workflow_dispatch: # allows manual trigger too
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health
+        run: |
+          curl -f https://concept-map-backend.onrender.com/health
+          echo "Backend pinged successfully"
+
+      - name: Ping concepts route to wake Neo4j
+        run: |
+          curl -f "https://concept-map-backend.onrender.com/api/courses" || true
+          echo "Neo4j pinged successfully"
