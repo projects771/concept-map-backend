@@ -77,7 +77,7 @@ router.post('/edge', requireFields('fromId', 'toId', 'courseId'), async (req, re
     await session.run(
       `MATCH (a:Concept {id: $fromId, courseId: $courseId})
        MATCH (b:Concept {id: $toId, courseId: $courseId})
-       CREATE (b)-[:REQUIRES]->(a)`,
+       MERGE (b)-[:REQUIRES]->(a)`,
       { fromId, toId, courseId }
     );
 
