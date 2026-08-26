@@ -147,8 +147,10 @@ router.post('/google', async (req, res) => {
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 
   } catch (err) {
-    console.error('Google auth error:', err.message);
-    res.status(500).json({ error: 'Google authentication failed' });
+    console.error('Google auth error:', err.message, err.response?.data);
+    res.status(500).json({ 
+      error: `Google auth failed: ${err.response?.data?.error_description || err.message}` 
+    });
   } finally {
     await session.close();
   }
