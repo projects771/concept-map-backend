@@ -16,6 +16,15 @@ router.get('/', async (req, res) => {
       return res.status(400).json({ error: 'courseId query parameter is required' });
     }
 
+    const courseResult = await session.run(
+      'MATCH (c:Course {id: $courseId}) RETURN c',
+      { courseId }
+    );
+
+    const course = courseResult.records.length > 0
+      ? courseResult.records[0].get('c').properties
+      : null;
+
     const nodesResult = await session.run(
       'MATCH (c:Concept {courseId: $courseId}) RETURN c',
       { courseId }
@@ -33,7 +42,7 @@ router.get('/', async (req, res) => {
       to: r.get('to'),
     }));
 
-    res.json({ concepts, edges });
+    res.json({ course, concepts, edges });
   } catch (err) {
     res.status(500).json({ error: err.message });
   } finally {
