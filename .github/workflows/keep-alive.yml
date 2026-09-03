@@ -15,7 +15,7 @@ jobs:
           curl -f https://concept-map-backend.onrender.com/health
           echo "Backend pinged successfully"
 
-      - name: Ping concepts route to wake Neo4j
+      - name: Ping DB to keep Neo4j alive
         run: |
-          curl -f "https://concept-map-backend.onrender.com/api/courses" || true
+          curl -f https://concept-map-backend.onrender.com/health/db
           echo "Neo4j pinged successfully"

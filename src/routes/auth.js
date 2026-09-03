@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import axios from 'axios';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'waypoint_super_secret_jwt_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 router.post('/register', async (req, res) => {
   const session = getSession();
@@ -140,7 +140,7 @@ router.post('/google', async (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
 
