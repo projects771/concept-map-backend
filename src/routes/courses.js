@@ -150,8 +150,8 @@ router.get('/:id', async (req, res) => {
     );
 
     const edgesResult = await session.run(
-      `MATCH (a:Concept {courseId: $id})-[:REQUIRES]->(b:Concept {courseId: $id})
-       RETURN a.id as from, b.id as to`,
+      `MATCH (target:Concept {courseId: $id})-[:REQUIRES]->(source:Concept {courseId: $id})
+       RETURN source.id as from, target.id as to`,
       { id }
     );
 

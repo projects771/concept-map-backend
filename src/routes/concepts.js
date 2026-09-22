@@ -31,8 +31,8 @@ router.get('/', async (req, res) => {
     );
 
     const edgesResult = await session.run(
-      `MATCH (a:Concept {courseId: $courseId})-[:REQUIRES]->(b:Concept {courseId: $courseId})
-       RETURN a.id as from, b.id as to`,
+      `MATCH (target:Concept {courseId: $courseId})-[:REQUIRES]->(source:Concept {courseId: $courseId})
+       RETURN source.id as from, target.id as to`,
       { courseId }
     );
 
@@ -104,7 +104,7 @@ router.delete('/edge', requireFields('fromId', 'toId'), async (req, res) => {
   try {
     const { fromId, toId } = req.body;
     await session.run(
-      `MATCH (a:Concept {id: $fromId})-[r:REQUIRES]->(b:Concept {id: $toId})
+      `MATCH (target:Concept {id: $toId})-[r:REQUIRES]->(source:Concept {id: $fromId})
        DELETE r`,
       { fromId, toId }
     );
