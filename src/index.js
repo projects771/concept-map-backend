@@ -37,14 +37,24 @@ app.use(cors({
 
 app.use(express.json());
 
-// Public health endpoints (no auth required)
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+// Public health & keep-alive endpoints (no auth required)
+app.get('/health', async (req, res) => {
+  const session = getSession();
+  try {
+    await session.run('RETURN 1');
+    res.json({ status: 'ok', db: 'connected', timestamp: new Date().toISOString() });
+  } catch (err) {
+    res.status(200).json({ status: 'ok', db_status: 'reconnecting', error: err.message, timestamp: new Date().toISOString() });
+  } finally {
+    await session.close();
+  }
+});
 
 app.get('/health/db', async (req, res) => {
   const session = getSession();
   try {
     await session.run('RETURN 1');
-    res.json({ status: 'ok', db: 'connected' });
+    res.json({ status: 'ok', db: 'connected', timestamp: new Date().toISOString() });
   } catch (err) {
     res.status(500).json({ status: 'error', db: err.message });
   } finally {
@@ -67,4 +77,37 @@ app.listen(PORT, async () => {
   } catch (err) {
     console.warn('⚠ Could not initialize indexes:', err.message);
   }
+
+  // 1. Keep-alive heartbeat: ping Neo4j every 5 minutes to prevent idle connection drop & AuraDB pause
+  const DB_HEARTBEAT_MS = 5 * 60 * 1000;
+  setInterval(async () => {
+    try {
+      const session = getSession();
+      try {
+        await session.run('RETURN 1 AS keepalive');
+        // console.log('[Neo4j] Keep-alive ping OK');
+      } finally {
+        await session.close();
+      }
+    } catch (err) {
+      console.warn('⚠ Neo4j background keep-alive error:', err.message);
+    }
+  }, DB_HEARTBEAT_MS);
+
+  // 2. Self-ping to keep Render free tier awake (Render spins down after 15 min of no incoming requests)
+  const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || 'https://concept-map-backend.onrender.com';
+  const SELF_PING_MS = 10 * 60 * 1000; // Ping every 10 minutes
+  setInterval(async () => {
+    if (selfUrl && !selfUrl.includes('localhost')) {
+      try {
+        const response = await fetch(`${selfUrl}/health/db`);
+        if (response.ok) {
+          console.log(`[KeepAlive] Self-ping successful: ${selfUrl}/health/db`);
+        }
+      } catch (err) {
+        console.warn('[KeepAlive] Self-ping warning:', err.message);
+      }
+    }
+  }, SELF_PING_MS);
 });
+
